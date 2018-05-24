@@ -1,0 +1,8 @@
+---
+# (setup)  specific tasks
+- include: "RedHat/main.yml"
+  when: ansible_os_family == 'RedHat'
+
+# (setup)  specific tasks
+- include: "Debian/main.yml"
+  when: ansible_os_family == 'Debian'

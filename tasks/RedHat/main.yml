@@ -1,0 +1,52 @@
+---
+# tasks file for ansible-role-rbenv
+- name: Install rbenv packages
+  become: yes
+  yum: name={{ item }} state=present
+  with_items:
+    - openssl-devel
+    - readline-devel
+    - zlib-devel
+
+- name: Git clone rbenv
+  git:
+    repo: 'https://github.com/sstephenson/rbenv.git'
+    dest: '~/.rbenv'
+  become: yes
+  become_user: "{{ user.name | default(ansible_env.USER) }}"
+  register: clone_rbenv
+
+- name: Git clone ruby-build
+  git:
+    repo: 'https://github.com/sstephenson/ruby-build.git'
+    dest: '~/.rbenv/plugins/ruby-build'
+  become: yes
+  become_user: "{{ user.name | default(ansible_env.USER) }}"
+
+- name: Set rbenv path
+  lineinfile: >
+    dest=~/.zshrc
+    line='export PATH="$HOME/.rbenv/bin:$PATH"'
+  become: yes
+  become_user: "{{ user.name | default(ansible_env.USER) }}"
+
+- name: Set rbenv init
+  lineinfile: >
+    dest=~/.zshrc
+    line='eval "$(rbenv init -)"'
+  become: yes
+  become_user: "{{ user.name | default(ansible_env.USER) }}"
+
+- name: Install ruby's
+  shell: "RUBY_CONFIGURE_OPTS=--disable-install-doc ~/.rbenv/bin/rbenv install {{ version }}"
+  become: yes
+  become_user: "{{ user.name | default(ansible_env.USER) }}"
+  with_items:
+  - "{{ rbenv.versions }}"
+  loop_control:
+    loop_var: version
+
+- name: "Set global ruby {{ rbenv.versions[0] }}"
+  shell: "~/.rbenv/bin/rbenv global {{ rbenv.versions[0] }}; ~/.rbenv/bin/rbenv rehash"
+  become: yes
+  become_user: "{{ user.name | default(ansible_env.USER) }}"
